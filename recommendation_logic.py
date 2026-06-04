@@ -13,10 +13,20 @@ Features:
 from typing import Dict, Tuple, Optional, List, Set
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.neighbors import NearestNeighbors
-from sklearn.metrics.pairwise import cosine_similarity
 from music_engine import MusicEngine
+import recommendation_logic_simple as simple_recommendation_logic
+
+try:
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.neighbors import NearestNeighbors
+    from sklearn.metrics.pairwise import cosine_similarity
+
+    _SKLEARN_AVAILABLE = True
+except Exception:
+    StandardScaler = None  # type: ignore[assignment]
+    NearestNeighbors = None  # type: ignore[assignment]
+    cosine_similarity = None  # type: ignore[assignment]
+    _SKLEARN_AVAILABLE = False
 
 
 EMOTION_TO_VA: Dict[str, Tuple[float, float]] = {
@@ -235,13 +245,19 @@ class AdvancedMusicRecommender:
     
     def __init__(self, music_engine: MusicEngine):
         self.engine = music_engine
-        self.scaler = StandardScaler()
+        self.scaler = None
         self.knn_model = None
         self.feature_matrix = None
-        self._initialize_models()
+
+        if _SKLEARN_AVAILABLE:
+            self.scaler = StandardScaler()
+            self._initialize_models()
     
     def _initialize_models(self):
         """Initialize ML models with the music dataset."""
+        if not _SKLEARN_AVAILABLE:
+            return
+
         if not self.engine.is_ready():
             return
         
@@ -348,6 +364,16 @@ class AdvancedMusicRecommender:
         """
         Generate playlist using advanced ML techniques.
         """
+        if not _SKLEARN_AVAILABLE:
+            return simple_recommendation_logic.generate_playlist(
+                self.engine,
+                start_emotion=start_emotion,
+                target_emotion=target_emotion,
+                num_steps=num_steps,
+                tolerance=0.1,
+                random_state=random_state,
+            )
+
         if not self.engine.is_ready() or self.knn_model is None:
             return pd.DataFrame()
         
@@ -474,5 +500,15 @@ def generate_playlist(music_engine: MusicEngine, start_emotion: str,
     This function creates an AdvancedMusicRecommender instance and uses it
     to generate a therapeutically-optimized playlist.
     """
+    if not _SKLEARN_AVAILABLE:
+        return simple_recommendation_logic.generate_playlist(
+            music_engine,
+            start_emotion=start_emotion,
+            target_emotion=target_emotion,
+            num_steps=num_steps,
+            tolerance=tolerance,
+            random_state=random_state,
+        )
+
     recommender = AdvancedMusicRecommender(music_engine)
     return recommender.generate_playlist(start_emotion, target_emotion, num_steps, random_state)
