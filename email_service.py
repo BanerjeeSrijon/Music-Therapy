@@ -11,7 +11,8 @@ from typing import Optional
 import streamlit as st
 
 
-DEFAULT_APP_URL = "https://music-therapy-4sskqshhvjjxtb4ng5pnb7.streamlit.app/"
+# *** HARDCODED TO NEW URL - DO NOT CHANGE WITHOUT UPDATING EVERYWHERE ***
+APP_URL = "https://music-therapy-4sskqshhvjjxtb4ng5pnb7.streamlit.app/"
 
 
 def get_email_config() -> dict:
@@ -55,39 +56,6 @@ def is_email_configured() -> bool:
     return bool(config['user'] and config['password'])
 
 
-def get_app_url() -> str:
-    """Get web app URL for invitation emails from secrets/env with a safe default."""
-    # First, try to get from secrets - check both 'app' section and root level
-    if hasattr(st, 'secrets'):
-        if 'app' in st.secrets:
-            app_secrets = st.secrets['app']
-            for key in ('APP_URL', 'BASE_URL'):
-                value = app_secrets.get(key, '')
-                if value:
-                    url = value.rstrip('/') + '/'
-                    print(f"[email_service] Using APP_URL from secrets.app: {url}")
-                    return url
-
-        for key in ('APP_URL', 'BASE_URL'):
-            value = st.secrets.get(key, '')
-            if value:
-                url = str(value).rstrip('/') + '/'
-                print(f"[email_service] Using {key} from root secrets: {url}")
-                return url
-
-    # Try environment variables
-    for key in ('APP_URL', 'BASE_URL', 'STREAMLIT_APP_URL'):
-        value = os.getenv(key, '')
-        if value:
-            url = value.rstrip('/') + '/'
-            print(f"[email_service] Using {key} from env vars: {url}")
-            return url
-
-    # Fallback to default
-    print(f"[email_service] Using DEFAULT_APP_URL: {DEFAULT_APP_URL}")
-    return DEFAULT_APP_URL
-
-
 def create_invitation_email(
     parent_email: str,
     child_name: str,
@@ -100,7 +68,8 @@ def create_invitation_email(
     Returns:
         tuple: (html_content, plain_text_content)
     """
-    app_url = get_app_url()
+    # Use the hardcoded URL directly
+    app_url = APP_URL
 
     # Plain text version
     plain_text = f"""
