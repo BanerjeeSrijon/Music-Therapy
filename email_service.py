@@ -11,6 +11,9 @@ from typing import Optional
 import streamlit as st
 
 
+DEFAULT_APP_URL = "https://music-therapy-4sskqshhvjjxtb4ng5pnb7.streamlit.app/"
+
+
 def get_email_config() -> dict:
     """
     Get email configuration from environment variables or Streamlit secrets.
@@ -52,6 +55,29 @@ def is_email_configured() -> bool:
     return bool(config['user'] and config['password'])
 
 
+def get_app_url() -> str:
+    """Get web app URL for invitation emails from secrets/env with a safe default."""
+    if hasattr(st, 'secrets'):
+        if 'app' in st.secrets:
+            app_secrets = st.secrets['app']
+            for key in ('APP_URL', 'BASE_URL'):
+                value = app_secrets.get(key, '')
+                if value:
+                    return value.rstrip('/') + '/'
+
+        for key in ('APP_URL', 'BASE_URL'):
+            value = st.secrets.get(key, '')
+            if value:
+                return str(value).rstrip('/') + '/'
+
+    for key in ('APP_URL', 'BASE_URL', 'STREAMLIT_APP_URL'):
+        value = os.getenv(key, '')
+        if value:
+            return value.rstrip('/') + '/'
+
+    return DEFAULT_APP_URL
+
+
 def create_invitation_email(
     parent_email: str,
     child_name: str,
@@ -64,6 +90,8 @@ def create_invitation_email(
     Returns:
         tuple: (html_content, plain_text_content)
     """
+    app_url = get_app_url()
+
     # Plain text version
     plain_text = f"""
 Hello,
@@ -75,10 +103,10 @@ to support children's emotional growth through personalized music recommendation
 
 Your Invitation Code: {invitation_code}
 
-Webapp Link: https://music-therapy-4sskqshhvjjxtb4ng5pnb7.streamlit.app/
+Webapp Link: {app_url}
 
 To get started:
-1. Visit https://music-therapy-4sskqshhvjjxtb4ng5pnb7.streamlit.app/
+1. Visit {app_url}
 2. Go to the "Parent Invitation" tab
 3. Enter your invitation code: {invitation_code}
 4. Create your account and password
@@ -223,7 +251,7 @@ If you have questions, please contact {therapist_name} directly.
             <h3>🚀 Getting Started</h3>
             <ol>
                 <li>Visit the <strong>Music Therapy Recommender</strong> app at:<br>
-                    <a href="https://music-therapy-4sskqshhvjjxtb4ng5pnb7.streamlit.app/" class="button" style="color: white; text-decoration: none; display: inline-block; margin-top: 10px;">Open Music Therapy App</a></li>
+                    <a href="{app_url}" class="button" style="color: white; text-decoration: none; display: inline-block; margin-top: 10px;">Open Music Therapy App</a></li>
                 <li>Go to the <strong>"Parent Invitation"</strong> tab</li>
                 <li>Enter your invitation code: <strong>{invitation_code}</strong></li>
                 <li>Create your account and password</li>
