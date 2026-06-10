@@ -57,24 +57,34 @@ def is_email_configured() -> bool:
 
 def get_app_url() -> str:
     """Get web app URL for invitation emails from secrets/env with a safe default."""
+    # First, try to get from secrets - check both 'app' section and root level
     if hasattr(st, 'secrets'):
         if 'app' in st.secrets:
             app_secrets = st.secrets['app']
             for key in ('APP_URL', 'BASE_URL'):
                 value = app_secrets.get(key, '')
                 if value:
-                    return value.rstrip('/') + '/'
+                    url = value.rstrip('/') + '/'
+                    print(f"[email_service] Using APP_URL from secrets.app: {url}")
+                    return url
 
         for key in ('APP_URL', 'BASE_URL'):
             value = st.secrets.get(key, '')
             if value:
-                return str(value).rstrip('/') + '/'
+                url = str(value).rstrip('/') + '/'
+                print(f"[email_service] Using {key} from root secrets: {url}")
+                return url
 
+    # Try environment variables
     for key in ('APP_URL', 'BASE_URL', 'STREAMLIT_APP_URL'):
         value = os.getenv(key, '')
         if value:
-            return value.rstrip('/') + '/'
+            url = value.rstrip('/') + '/'
+            print(f"[email_service] Using {key} from env vars: {url}")
+            return url
 
+    # Fallback to default
+    print(f"[email_service] Using DEFAULT_APP_URL: {DEFAULT_APP_URL}")
     return DEFAULT_APP_URL
 
 
